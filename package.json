@@ -13,6 +13,14 @@
   "dependencies": {
     "@capacitor/android": "^8.5.3",
     "@capacitor/cli": "^8.5.3",
-    "@capacitor/core": "^8.5.3"
+    "@capacitor/core": "^8.5.3",
+    "@img/sharp-wasm32": "^0.35.5",
+    "sharp": "^0.35.5"
+  },
+  "overrides": {
+    "sharp": "$sharp"
+  },
+  "devDependencies": {
+    "@capacitor/assets": "^3.0.5"
   }
 }
