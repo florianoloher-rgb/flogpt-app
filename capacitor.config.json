@@ -1,0 +1,10 @@
+{
+  "appId": "com.fproduction.flogpt",
+  "appName": "FloGPT",
+  "webDir": "www",
+  "server": {
+    "url": "https://flogpt.floriano-loher.workers.dev/",
+    "cleartext": false,
+    "androidScheme": "https"
+  }
+}

@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">FloGPT</string>
+    <string name="title_activity_main">FloGPT</string>
+    <string name="package_name">com.fproduction.flogpt</string>
+    <string name="custom_url_scheme">com.fproduction.flogpt</string>
+</resources>

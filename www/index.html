@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FloGPT</title>
+    <style>
+        body { background:#0a0a0a; color:#00ff41; font-family:sans-serif;
+               display:flex; justify-content:center; align-items:center;
+               height:100vh; margin:0; flex-direction:column; gap:20px; }
+        .spinner { width:40px; height:40px; border:3px solid rgba(0,255,65,.2);
+                   border-top-color:#00ff41; border-radius:50%;
+                   animation:spin 1s linear infinite; }
+        @keyframes spin { to { transform:rotate(360deg); } }
+    </style>
+</head>
+<body>
+    <div class="spinner"></div>
+    <div id="status">Verbinde mit FloGPT...</div>
+    <script>
+        const CLOUDFLARE_URL = 'https://flogpt.floriano-loher.workers.dev/';
+
+        if (navigator.onLine) {
+            document.getElementById('status').textContent = 'Lade FloGPT...';
+            window.location.replace(CLOUDFLARE_URL);
+        } else {
+            document.getElementById('status').textContent = 'Offline-Modus wird geladen...';
+            window.location.replace('app-offline.html');
+        }
+    </script>
+</body>
+</html>
