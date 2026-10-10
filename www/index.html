@@ -22,7 +22,7 @@
 <body>
     <div class="spinner" id="spinner"></div>
     <div class="logo">FloGPT</div>
-    <div class="hint" id="status">Prüfe Verbindung...</div>
+    <div class="hint" id="status">Starte...</div>
 
     <script>
     const CLOUDFLARE_URL = 'https://flogpt.floriano-loher.workers.dev/';
@@ -33,7 +33,6 @@
 
         statusEl.textContent = 'Prüfe Verbindung...';
 
-        // Aktiver Test: Cloudflare wirklich erreichbar?
         let online = false;
         try {
             const ctrl = new AbortController();
@@ -44,20 +43,18 @@
                 cache: 'no-store'
             });
             online = res.ok || res.status === 404;
-            console.log('[Bootstrap] Cloudflare-Test:', res.status, '→ online =', online);
+            console.log('[Bootstrap] Online-Test:', res.status, '→ online =', online);
         } catch (e) {
-            console.log('[Bootstrap] Cloudflare-Test fehlgeschlagen:', e.message);
+            console.log('[Bootstrap] Online-Test fehlgeschlagen:', e.message);
             online = false;
         }
 
-        // ── ONLINE: Cloudflare laden ──
         if (online) {
             statusEl.textContent = 'Online. Lade FloGPT...';
             window.location.replace(CLOUDFLARE_URL);
             return;
         }
 
-        // ── OFFLINE: aus Preferences laden ──
         statusEl.textContent = 'Offline erkannt. Lade gespeicherte Version...';
 
         try {
@@ -97,7 +94,6 @@
     boot();
 
     window.addEventListener('online', () => {
-        // Nach kurzer Verzögerung nochmal prüfen
         setTimeout(() => window.location.reload(), 1000);
     });
     </script>
