@@ -17,15 +17,23 @@
                 -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
         .hint { color:#888; font-size:.85rem; max-width:300px; line-height:1.5; }
         .error { color:#ff2d55; font-size:.9rem; max-width:320px; line-height:1.5; }
+        .debug { color:#444; font-size:.7rem; font-family:monospace; max-width:340px; line-height:1.4; margin-top:10px; }
     </style>
 </head>
 <body>
     <div class="spinner" id="spinner"></div>
     <div class="logo">FloGPT</div>
     <div class="hint" id="status">Starte...</div>
+    <div class="debug" id="debug"></div>
 
     <script>
     const CLOUDFLARE_URL = 'https://flogpt.floriano-loher.workers.dev/';
+
+    function setDebug(msg) {
+        const d = document.getElementById('debug');
+        if (d) d.textContent = msg;
+        console.log('[Bootstrap]', msg);
+    }
 
     async function boot() {
         const statusEl = document.getElementById('status');
@@ -33,33 +41,45 @@
 
         statusEl.textContent = 'Prüfe Verbindung...';
 
-        // Aktiver Test: Cloudflare wirklich erreichbar?
-        // no-cors → funktioniert auch, wenn CORS blockt
-        let online = false;
+        // 1. Schnelltest: navigator.onLine (aus Android-System)
+        const navOnline = navigator.onLine;
+        setDebug('navigator.onLine = ' + navOnline);
+
+        if (navOnline) {
+            // navigator sagt online → direkt zu Cloudflare
+            statusEl.textContent = 'Online. Lade FloGPT...';
+            setDebug('Gehe zu Cloudflare (navigator = online)');
+            await new Promise(r => setTimeout(r, 200));
+            window.location.replace(CLOUDFLARE_URL);
+            return;
+        }
+
+        // 2. navigator sagt offline → Sicherheits-Check per fetch
+        let fetchOk = false;
         try {
             const ctrl = new AbortController();
-            setTimeout(() => ctrl.abort(), 3000);
+            setTimeout(() => ctrl.abort(), 2500);
             await fetch(CLOUDFLARE_URL + '?ping=' + Date.now(), {
                 method: 'GET',
                 signal: ctrl.signal,
                 cache: 'no-store',
                 mode: 'no-cors'
             });
-            online = true;
-            console.log('[Bootstrap] Online-Test: OK');
+            fetchOk = true;
         } catch (e) {
-            console.log('[Bootstrap] Online-Test fehlgeschlagen:', e.message);
-            online = false;
+            fetchOk = false;
         }
 
-        // ── ONLINE: Cloudflare laden ──
-        if (online) {
-            statusEl.textContent = 'Online. Lade FloGPT...';
+        if (fetchOk) {
+            statusEl.textContent = 'Online (via fetch). Lade FloGPT...';
+            setDebug('Gehe zu Cloudflare (fetch = OK)');
+            await new Promise(r => setTimeout(r, 200));
             window.location.replace(CLOUDFLARE_URL);
             return;
         }
 
-        // ── OFFLINE: aus Preferences laden ──
+        // 3. Wirklich offline → Preferences laden
+        setDebug('Offline-Modus aktiv');
         statusEl.textContent = 'Offline erkannt. Lade gespeicherte Version...';
 
         try {
@@ -76,7 +96,7 @@
                 statusEl.innerHTML =
                     '📴 <b>Keine Offline-Version installiert</b><br><br>' +
                     'Bitte gehe online, öffne die Einstellungen → FloGPT Offline → ' +
-                    '„Neues Update installieren". Danach funktioniert FloGPT auch offline.';
+                    '„Neues Update installieren".';
                 return;
             }
 
@@ -91,8 +111,7 @@
             spinnerEl.style.display = 'none';
             statusEl.className = 'error';
             statusEl.innerHTML =
-                '⚠️ <b>Fehler:</b> ' + (e.message || 'Unbekannt') + '<br><br>' +
-                'Bitte gehe online und öffne die App erneut.';
+                '⚠️ <b>Fehler:</b> ' + (e.message || 'Unbekannt');
         }
     }
 
