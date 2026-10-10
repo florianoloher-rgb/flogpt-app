@@ -5,6 +5,9 @@
   "server": {
     "cleartext": false,
     "androidScheme": "https",
-    "userAgent": "FloGPT-App"
+    "userAgent": "FloGPT-App",
+    "allowNavigation": [
+      "flogpt.floriano-loher.workers.dev"
+    ]
   }
 }
