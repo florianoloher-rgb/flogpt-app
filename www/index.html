@@ -17,23 +17,15 @@
                 -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
         .hint { color:#888; font-size:.85rem; max-width:300px; line-height:1.5; }
         .error { color:#ff2d55; font-size:.9rem; max-width:320px; line-height:1.5; }
-        .debug { color:#444; font-size:.7rem; font-family:monospace; max-width:340px; line-height:1.4; margin-top:10px; }
     </style>
 </head>
 <body>
     <div class="spinner" id="spinner"></div>
     <div class="logo">FloGPT</div>
     <div class="hint" id="status">Starte...</div>
-    <div class="debug" id="debug"></div>
 
     <script>
     const CLOUDFLARE_URL = 'https://flogpt.floriano-loher.workers.dev/';
-
-    function setDebug(msg) {
-        const d = document.getElementById('debug');
-        if (d) d.textContent = msg;
-        console.log('[Bootstrap]', msg);
-    }
 
     async function boot() {
         const statusEl = document.getElementById('status');
@@ -41,52 +33,35 @@
 
         statusEl.textContent = 'Prüfe Verbindung...';
 
-        // 1. Schnelltest: navigator.onLine (aus Android-System)
-        const navOnline = navigator.onLine;
-        setDebug('navigator.onLine = ' + navOnline);
-
-        if (navOnline) {
-            // navigator sagt online → direkt zu Cloudflare
-            statusEl.textContent = 'Online. Lade FloGPT...';
-            setDebug('Gehe zu Cloudflare (navigator = online)');
-            await new Promise(r => setTimeout(r, 200));
-            window.location.replace(CLOUDFLARE_URL);
-            return;
-        }
-
-        // 2. navigator sagt offline → Sicherheits-Check per fetch
-        let fetchOk = false;
+        let online = false;
         try {
-            const ctrl = new AbortController();
-            setTimeout(() => ctrl.abort(), 2500);
-            await fetch(CLOUDFLARE_URL + '?ping=' + Date.now(), {
-                method: 'GET',
-                signal: ctrl.signal,
-                cache: 'no-store',
-                mode: 'no-cors'
-            });
-            fetchOk = true;
+            const Network = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.Network;
+            if (Network) {
+                const status = await Network.getStatus();
+                online = status.connected;
+                console.log('[Bootstrap] Network-Status:', status);
+            } else {
+                online = navigator.onLine;
+                console.log('[Bootstrap] Fallback navigator.onLine:', online);
+            }
         } catch (e) {
-            fetchOk = false;
+            console.log('[Bootstrap] Fehler:', e);
+            online = navigator.onLine;
         }
 
-        if (fetchOk) {
-            statusEl.textContent = 'Online (via fetch). Lade FloGPT...';
-            setDebug('Gehe zu Cloudflare (fetch = OK)');
-            await new Promise(r => setTimeout(r, 200));
+        // ── ONLINE: Cloudflare laden ──
+        if (online) {
+            statusEl.textContent = 'Online. Lade FloGPT...';
             window.location.replace(CLOUDFLARE_URL);
             return;
         }
 
-        // 3. Wirklich offline → Preferences laden
-        setDebug('Offline-Modus aktiv');
+        // ── OFFLINE: aus Preferences laden ──
         statusEl.textContent = 'Offline erkannt. Lade gespeicherte Version...';
 
         try {
             const Preferences = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.Preferences;
-            if (!Preferences) {
-                throw new Error('Preferences-Plugin nicht verfügbar');
-            }
+            if (!Preferences) throw new Error('Preferences-Plugin nicht verfügbar');
 
             const { value } = await Preferences.get({ key: 'flogpt_offline_html' });
 
@@ -110,16 +85,24 @@
         } catch (e) {
             spinnerEl.style.display = 'none';
             statusEl.className = 'error';
-            statusEl.innerHTML =
-                '⚠️ <b>Fehler:</b> ' + (e.message || 'Unbekannt');
+            statusEl.innerHTML = '⚠️ <b>Fehler:</b> ' + (e.message || 'Unbekannt');
         }
     }
 
     boot();
 
-    window.addEventListener('online', () => {
-        setTimeout(() => window.location.reload(), 1000);
-    });
+    // Live-Reaktion auf Netzwerkänderungen
+    (async function initNetworkListener() {
+        try {
+            const Network = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.Network;
+            if (Network && Network.addListener) {
+                Network.addListener('networkStatusChange', (status) => {
+                    console.log('[Bootstrap] Netzwerk geändert:', status);
+                    if (status.connected) window.location.reload();
+                });
+            }
+        } catch (e) {}
+    })();
     </script>
 </body>
 </html>
