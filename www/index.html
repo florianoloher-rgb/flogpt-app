@@ -22,7 +22,7 @@
 <body>
     <div class="spinner" id="spinner"></div>
     <div class="logo">FloGPT</div>
-    <div class="hint" id="status">Verbinde...</div>
+    <div class="hint" id="status">Prüfe Verbindung...</div>
 
     <script>
     const CLOUDFLARE_URL = 'https://flogpt.floriano-loher.workers.dev/';
@@ -31,9 +31,28 @@
         const statusEl = document.getElementById('status');
         const spinnerEl = document.getElementById('spinner');
 
+        statusEl.textContent = 'Prüfe Verbindung...';
+
+        // Aktiver Test: Cloudflare wirklich erreichbar?
+        let online = false;
+        try {
+            const ctrl = new AbortController();
+            setTimeout(() => ctrl.abort(), 2500);
+            const res = await fetch(CLOUDFLARE_URL, {
+                method: 'HEAD',
+                signal: ctrl.signal,
+                cache: 'no-store'
+            });
+            online = res.ok || res.status === 404;
+            console.log('[Bootstrap] Cloudflare-Test:', res.status, '→ online =', online);
+        } catch (e) {
+            console.log('[Bootstrap] Cloudflare-Test fehlgeschlagen:', e.message);
+            online = false;
+        }
+
         // ── ONLINE: Cloudflare laden ──
-        if (navigator.onLine) {
-            statusEl.textContent = 'Lade FloGPT...';
+        if (online) {
+            statusEl.textContent = 'Online. Lade FloGPT...';
             window.location.replace(CLOUDFLARE_URL);
             return;
         }
@@ -59,11 +78,9 @@
                 return;
             }
 
-            // HTML der Offline-Seite rendern
             statusEl.textContent = 'Starte Offline-Modus...';
             await new Promise(r => setTimeout(r, 300));
 
-            // Gesamtes Dokument ersetzen
             document.open();
             document.write(value);
             document.close();
@@ -77,12 +94,11 @@
         }
     }
 
-    // Beim Start ausführen
     boot();
 
-    // Reagieren wenn sich Verbindung ändert
     window.addEventListener('online', () => {
-        window.location.replace(CLOUDFLARE_URL);
+        // Nach kurzer Verzögerung nochmal prüfen
+        setTimeout(() => window.location.reload(), 1000);
     });
     </script>
 </body>
