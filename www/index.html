@@ -33,28 +33,33 @@
 
         statusEl.textContent = 'Prüfe Verbindung...';
 
+        // Aktiver Test: Cloudflare wirklich erreichbar?
+        // no-cors → funktioniert auch, wenn CORS blockt
         let online = false;
         try {
             const ctrl = new AbortController();
-            setTimeout(() => ctrl.abort(), 2500);
-            const res = await fetch(CLOUDFLARE_URL, {
-                method: 'HEAD',
+            setTimeout(() => ctrl.abort(), 3000);
+            await fetch(CLOUDFLARE_URL + '?ping=' + Date.now(), {
+                method: 'GET',
                 signal: ctrl.signal,
-                cache: 'no-store'
+                cache: 'no-store',
+                mode: 'no-cors'
             });
-            online = res.ok || res.status === 404;
-            console.log('[Bootstrap] Online-Test:', res.status, '→ online =', online);
+            online = true;
+            console.log('[Bootstrap] Online-Test: OK');
         } catch (e) {
             console.log('[Bootstrap] Online-Test fehlgeschlagen:', e.message);
             online = false;
         }
 
+        // ── ONLINE: Cloudflare laden ──
         if (online) {
             statusEl.textContent = 'Online. Lade FloGPT...';
             window.location.replace(CLOUDFLARE_URL);
             return;
         }
 
+        // ── OFFLINE: aus Preferences laden ──
         statusEl.textContent = 'Offline erkannt. Lade gespeicherte Version...';
 
         try {
