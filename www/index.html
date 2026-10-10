@@ -2,31 +2,88 @@
 <html lang="de">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>FloGPT</title>
     <style>
-        body { background:#0a0a0a; color:#00ff41; font-family:sans-serif;
-               display:flex; justify-content:center; align-items:center;
-               height:100vh; margin:0; flex-direction:column; gap:20px; }
+        body { background:#0a0a0a; color:#00ff41; font-family:-apple-system, BlinkMacSystemFont, sans-serif;
+               display:flex; justify-content:center; align-items:center; height:100vh; margin:0;
+               flex-direction:column; gap:20px; text-align:center; padding:20px; }
         .spinner { width:40px; height:40px; border:3px solid rgba(0,255,65,.2);
                    border-top-color:#00ff41; border-radius:50%;
                    animation:spin 1s linear infinite; }
         @keyframes spin { to { transform:rotate(360deg); } }
+        .logo { font-size:2rem; font-weight:900;
+                background: linear-gradient(45deg, #00ff41, #FFD700);
+                -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .hint { color:#888; font-size:.85rem; max-width:300px; line-height:1.5; }
+        .error { color:#ff2d55; font-size:.9rem; max-width:320px; line-height:1.5; }
     </style>
 </head>
 <body>
-    <div class="spinner"></div>
-    <div id="status">Verbinde mit FloGPT...</div>
-    <script>
-        const CLOUDFLARE_URL = 'https://flogpt.floriano-loher.workers.dev/';
+    <div class="spinner" id="spinner"></div>
+    <div class="logo">FloGPT</div>
+    <div class="hint" id="status">Verbinde...</div>
 
+    <script>
+    const CLOUDFLARE_URL = 'https://flogpt.floriano-loher.workers.dev/';
+
+    async function boot() {
+        const statusEl = document.getElementById('status');
+        const spinnerEl = document.getElementById('spinner');
+
+        // ── ONLINE: Cloudflare laden ──
         if (navigator.onLine) {
-            document.getElementById('status').textContent = 'Lade FloGPT...';
+            statusEl.textContent = 'Lade FloGPT...';
             window.location.replace(CLOUDFLARE_URL);
-        } else {
-            document.getElementById('status').textContent = 'Offline-Modus wird geladen...';
-            window.location.replace('app-offline.html');
+            return;
         }
+
+        // ── OFFLINE: aus Preferences laden ──
+        statusEl.textContent = 'Offline erkannt. Lade gespeicherte Version...';
+
+        try {
+            const Preferences = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.Preferences;
+            if (!Preferences) {
+                throw new Error('Preferences-Plugin nicht verfügbar');
+            }
+
+            const { value } = await Preferences.get({ key: 'flogpt_offline_html' });
+
+            if (!value) {
+                spinnerEl.style.display = 'none';
+                statusEl.className = 'error';
+                statusEl.innerHTML =
+                    '📴 <b>Keine Offline-Version installiert</b><br><br>' +
+                    'Bitte gehe online, öffne die Einstellungen → FloGPT Offline → ' +
+                    '„Neues Update installieren". Danach funktioniert FloGPT auch offline.';
+                return;
+            }
+
+            // HTML der Offline-Seite rendern
+            statusEl.textContent = 'Starte Offline-Modus...';
+            await new Promise(r => setTimeout(r, 300));
+
+            // Gesamtes Dokument ersetzen
+            document.open();
+            document.write(value);
+            document.close();
+
+        } catch (e) {
+            spinnerEl.style.display = 'none';
+            statusEl.className = 'error';
+            statusEl.innerHTML =
+                '⚠️ <b>Fehler:</b> ' + (e.message || 'Unbekannt') + '<br><br>' +
+                'Bitte gehe online und öffne die App erneut.';
+        }
+    }
+
+    // Beim Start ausführen
+    boot();
+
+    // Reagieren wenn sich Verbindung ändert
+    window.addEventListener('online', () => {
+        window.location.replace(CLOUDFLARE_URL);
+    });
     </script>
 </body>
 </html>
