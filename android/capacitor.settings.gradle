@@ -2,6 +2,9 @@
 include ':capacitor-android'
 project(':capacitor-android').projectDir = new File('../node_modules/@capacitor/android/capacitor')
 
+include ':cantoo-capacitor-llama'
+project(':cantoo-capacitor-llama').projectDir = new File('../node_modules/@cantoo/capacitor-llama/android')
+
 include ':capacitor-network'
 project(':capacitor-network').projectDir = new File('../node_modules/@capacitor/network/android')
 
