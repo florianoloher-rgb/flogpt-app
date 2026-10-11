@@ -127,7 +127,7 @@ public class MainActivity extends BridgeActivity {
             webView.post(new Runnable() {
                 @Override
                 public void run() {
-                    webView.loadDataWithBaseURL("https://localhost/", content, "text/html", "UTF-8", null);
+                    webView.loadDataWithBaseURL("https://flogpt.floriano-loher.workers.dev/", content, "text/html", "UTF-8", null);
                 }
             });
 
